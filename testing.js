@@ -7,55 +7,96 @@
   });
   observer.observe(canvas);
 
+  // sizes
   let len = 275;
-  let completedLen = 270;
-  let taleLen = null;
-
+  let thick = 10;
+  let velocity = 3;
+  // movement
   let x = 200;
   let y = 300;
+  let taleLen = null;
+  let completedLen = 270;
   let dir = "right";
-  //
+  // feed
+  let feedX = Math.random() * canvas.width;
+  let feedY = Math.random() * canvas.height;
   const controls = ["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp"];
 
   let stack = [];
 
   const drawPath = () => {
+    const drawEndCircle = (x, y) => {
+      c.beginPath();
+      c.arc(x, y, thick / 2, 0, 2 * Math.PI);
+      c.fill();
+      c.closePath();
+    };
+
+    const putFeed = () => {
+      c.beginPath();
+      c.arc(feedX, feedY, 6, 0, 2 * Math.PI);
+      c.fill();
+      c.closePath();
+    };
+
     c.reset();
-    c.beginPath();
+    putFeed();
     switch (dir) {
       case "left":
+        c.beginPath();
         c.moveTo(x, y);
         c.lineTo(x - completedLen, y);
         if (x < completedLen && x > 0) {
           c.moveTo(canvas.width, y);
           c.lineTo(canvas.width - (len - x), y);
         }
+        c.closePath();
+        c.lineWidth = thick;
+        c.stroke();
+        drawEndCircle(x, y);
+        drawEndCircle(x - completedLen, y);
         break;
       case "up":
+        c.beginPath();
         c.moveTo(x, y);
         c.lineTo(x, y - completedLen);
         if (y < completedLen && y > 0) {
           c.moveTo(x, canvas.height);
           c.lineTo(x, canvas.height - (len - y));
         }
+        c.closePath();
+        c.lineWidth = thick;
+        c.stroke();
+        drawEndCircle(x, y);
+        drawEndCircle(x, y - completedLen);
         break;
       case "right":
+        c.beginPath();
         c.moveTo(x, y);
         c.lineTo(x + completedLen, y);
         if (x > canvas.width - completedLen && x < canvas.width) {
           c.moveTo(0, y);
           c.lineTo(len - (canvas.width - x), y);
-        } else if (x > canvas.width) {
-          x = 0;
         }
+        c.closePath();
+        c.lineWidth = thick;
+        c.stroke();
+        drawEndCircle(x, y);
+        drawEndCircle(x + completedLen, y);
         break;
       case "down":
+        c.beginPath();
         c.moveTo(x, y);
         c.lineTo(x, y + completedLen);
         if (y > canvas.height - completedLen && y < canvas.height) {
           c.moveTo(x, 0);
           c.lineTo(x, len - (canvas.height - y));
         }
+        c.closePath();
+        c.lineWidth = thick;
+        c.stroke();
+        drawEndCircle(x, y);
+        drawEndCircle(x, y + completedLen);
         break;
     }
 
@@ -63,36 +104,61 @@
       const { dir, startPosX, startPosY, turnPosX, turnPosY, risidualLen } = {
         ...path,
       };
+      c.beginPath();
+      c.arc(turnPosX, turnPosY, thick / 2, 0, 2 * Math.PI);
+      c.fill();
+      c.closePath();
+      c.beginPath();
       if (index === 0) {
         const startPoint = risidualLen - taleLen;
         switch (dir) {
           case "up":
+            c.beginPath();
             c.moveTo(startPosX, startPosY - startPoint);
             c.lineTo(turnPosX, turnPosY);
+            c.closePath();
+            c.lineWidth = thick;
+            c.stroke();
+            drawEndCircle(startPosX, startPosY - startPoint);
             break;
           case "right":
+            c.beginPath();
             c.moveTo(startPosX + startPoint, startPosY);
             c.lineTo(turnPosX, turnPosY);
+            c.closePath();
+            c.lineWidth = thick;
+            c.stroke();
+            drawEndCircle(startPosX + startPoint, startPosY);
             break;
           case "left":
+            c.beginPath();
             c.moveTo(startPosX - startPoint, startPosY);
             c.lineTo(turnPosX, turnPosY);
+            c.closePath();
+            c.lineWidth = thick;
+            c.stroke();
+            drawEndCircle(startPosX - startPoint, startPosY);
             break;
           case "down":
+            c.beginPath();
             c.moveTo(startPosX, startPosY + startPoint);
             c.lineTo(turnPosX, turnPosY);
+            c.closePath();
+            c.lineWidth = thick;
+            c.stroke();
+            drawEndCircle(startPosX, startPosY + startPoint);
             break;
         }
       } else {
+        c.beginPath();
+        c.lineWidth = 1;
         c.moveTo(startPosX, startPosY);
         c.lineTo(turnPosX, turnPosY);
+        c.closePath();
+        c.lineWidth = thick;
+        c.stroke();
       }
     });
-
-    c.lineWidth = 4;
-    c.stroke();
-    c.closePath();
-    c.clip();
   };
 
   const changeDir = (key) => {
@@ -178,9 +244,23 @@
     changeDir(e.key);
   });
 
+  const detectCross = () => {
+    if (stack.length !== 0) {
+      stack.forEach((path) => {});
+    }
+  };
+
+  const checkInRange = (compVal, range, val) => {
+    if (val <= compVal + range && val >= compVal - range) {
+      return true;
+    }
+  };
+
   const updateFrames = () => {
+    // feed
+    // tale
     if (taleLen !== null) {
-      taleLen -= 2;
+      taleLen -= velocity;
     }
 
     if (taleLen <= 0) {
@@ -192,23 +272,51 @@
         taleLen = null;
       }
     }
+    detectCross();
 
+    const putFeed = () => {
+      if (
+        (checkInRange(feedY, 20, y - completedLen) &&
+          checkInRange(feedX, 20, x)) ||
+        (checkInRange(feedY, 20, y + completedLen) &&
+          checkInRange(feedX, 20, x)) ||
+        (checkInRange(feedY, 20, y) &&
+          checkInRange(feedX, 20, x - completedLen)) ||
+        (checkInRange(feedY, 20, y) &&
+          checkInRange(feedX, 20, x + completedLen))
+      ) {
+        feedX = Math.random() * canvas.width;
+        feedY = Math.random() * canvas.height;
+        len += 30;
+      }
+    };
+
+    putFeed();
+
+    // front&frames
     if (completedLen < len) {
-      completedLen += 2;
+      completedLen += velocity;
     } else {
       completedLen = len;
       switch (dir) {
         case "up":
-          y -= 2;
+          y -= velocity;
           break;
         case "down":
-          y += 2;
+          y += velocity;
           break;
         case "left":
-          x -= 2;
+          x -= velocity;
           break;
         case "right":
-          x += 2;
+          // if (
+          //   checkInRange(feedY, 10, y) &&
+          //   checkInRange(feedX, 10, x + completedLen)
+          // ) {
+          //   feedX = Math.random() * canvas.width;
+          //   feedY = Math.random() * canvas.height;
+          // }
+          x += velocity;
           break;
       }
       if (x > canvas.width) x = 0;
